@@ -8,14 +8,14 @@ with open("README.md", "r") as fh:
 
     
 setuptools.setup(
-    name="GOShlearnpy",
+    name="pyGOSH",
     version="0.0.1",
     author="Hyoseob Noh",
     author_email="hyoddubi@naver.com",
-    description="GOShLearnpy: Python library for Global Optmization and Shallow machine learning",
+    description="pyGOSH: Python library for Global Optmization and SHallow machine learning",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/hyoddubi1/GOShLearnpy",
+    url="https://github.com/hyoddubi1/GOShpy",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

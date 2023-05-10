@@ -14,7 +14,7 @@ import numpy as np
 from pyDOE import lhs
 import random
 #from joblib.externals.loky import set_loky_pickler
-#from joblib import parallel_backend
+from joblib import parallel_backend
 from joblib import Parallel, delayed
 #from joblib import wrap_non_picklable_objects
 #%%
@@ -35,7 +35,7 @@ def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
     fcal = 0
     
     q = np.max([d, 2])
-    q = np.min([n, d])
+    q = np.min([n, q])
     
     sortidx = np.argsort(f)
     f = f[sortidx]
@@ -64,10 +64,12 @@ def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
         vqN = vi[-2]
         
         ce = np.mean(ui[:-1],axis = 0)
+        
             #reflection step
         Xnew = ce + alpha * (ce - uq)
+        # print('Xnew before: \r\n',Xnew)
         Xnew = BoundaryHandling(Xnew,ub,lb)
-#        print('Xnew',Xnew)
+        # print('\r\nXnew',Xnew)
         if obj_eval=='serial':
             fnew = obj_func(Xnew)
         elif obj_eval=='vector':
@@ -102,13 +104,22 @@ def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
                 fcal = fcal + 1
                 
                 #mutation step
-                if fnew>vq:
+                if fnew>vq :
                     
 #                    Xnew = lb + np.random.rand(d) *(ub-lb)
-                    sig = np.cov(X, rowvar=False)
-                    Dia = np.diag(sig)
-                    sig = np.diag((Dia + np.mean(Dia))*2)
-                    Xnew = np.random.multivariate_normal(ce,sig,1)[0]
+                    # print(X)
+                    
+                    if d == 1:
+                        sig = np.sqrt(np.cov(np.squeeze(X)))
+                        Xnew = np.random.normal(ce,sig,1)
+                        # print('X',X,'ce',ce,'Xnew',Xnew)
+                    else:
+                        sig = np.cov(X, rowvar=False)    
+                    # print(sig)
+                        Dia = np.diag(sig)
+                        sig = np.diag((Dia + np.mean(Dia))*2)
+                    
+                        Xnew = np.random.multivariate_normal(ce,sig,1)[0]
                     Xnew = BoundaryHandling(Xnew,ub,lb)
                     if obj_eval=='serial':
                         fnew = obj_func(Xnew)
@@ -145,7 +156,7 @@ def CCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
     fcal = 0
     
     q = np.max([d, 2])
-    q = np.min([n, d])
+    q = np.min([n, q])
     
     sortidx = np.argsort(f)
     f = f[sortidx]
@@ -166,11 +177,14 @@ def CCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
         # worst point
         uq = ui[-1]
         vq = vi[-1]
-        
+
         ce = np.mean(ui[:-1],axis = 0)
             #reflection step
+
         Xnew = ce + alpha * (ce - uq)
+
         Xnew = BoundaryHandling(Xnew,ub,lb)
+
         if obj_eval=='serial':
             fnew = obj_func(Xnew)
         elif obj_eval=='vector':
@@ -273,6 +287,7 @@ def DimensionRestore(obj_func,S,Sf,ub,lb,fcal,obj_eval='serial'):
     
     r = np.max(np.max(a,axis = 0) - np.min(a,axis = 0))
     c = np.matmul(a,a.transpose()) / N
+    
     d, v=np.linalg.eig(c)
 
     d = d / np.sum(d)
@@ -318,8 +333,6 @@ def DimensionRestore(obj_func,S,Sf,ub,lb,fcal,obj_eval='serial'):
                 Sfnew = Sfnew[sortidx]
                 Snew = Snew[sortidx]
             
-            
-    
     return Snew, Sfnew, fcal
 
 def BoundaryHandling(X,ub,lb):
@@ -364,12 +377,17 @@ def Pop_init(n_pop,n_dim,lb=None,ub=None,method = 'uniform',seed = None):
         lbt = 0
 
     pop = lb + (pop-lbt) * (ub-lb) / (ubt- lbt)
-        
+    # if n_dim == 1:
+    #     pop = np.array([pop])
     return pop
     
+
+def dummy_func(x):
+    return x**2
+
 class Optimizer(object):
     def __init__(self,
-            obj_func,
+            obj_func=dummy_func,
             lb = [0,0],
             ub = [1,1],
             algorithm = 'MCCE',
@@ -452,7 +470,8 @@ class Optimizer(object):
         self.n_jobs = n_jobs
         if self.n_jobs > 1:
             self.pre_dispatch = pre_dispatch
-            self.parallel = Parallel(n_jobs=n_jobs,pre_dispatch = 4)
+            # self.parallel = Parallel(n_jobs=n_jobs,pre_dispatch = 4)
+            self.parallel = Parallel(n_jobs=n_jobs)
 #            self.parallel = Parallel(n_jobs=n_jobs,pre_dispatch = self.pre_dispatch)
 #            print(self.parallel)
         if self.verbose:
@@ -496,11 +515,12 @@ class Optimizer(object):
             print('Evolve the population \n')
         
         X = self.X.copy()
-
+        # print('X:\n',X)
         if self.obj_eval == 'serial':
             
             f = np.zeros((self.n_pop))
             for i in range(self.n_pop):
+                # print(X[i])
                 f[i] = self.obj_func(X[i])
         elif self.obj_eval == 'vector':
             f = self.obj_func(X)
@@ -529,23 +549,51 @@ class Optimizer(object):
                 X, f = self._evolve(X,f) # dimension storing process is in this _evolve function
             else:
                 #SCE procedure
-                sortidx = np.argsort(f)
+
+                sortidx = np.squeeze(np.argsort(f,axis = 0))
+
                 f = f[sortidx]
                 X = X[sortidx]
-#                print('X:',X)
+
                 for ic in range(self.n_complex_size):
                     K1 = np.array(random.sample(range(self.n_complex), self.n_complex)) + ic * self.n_complex
+                    K1 = np.squeeze(K1)
+
                     CX[:,ic,:] = X[K1,:]
-                    FX[:,ic] = f[K1]
-                
-                if self.n_jobs > 1:
+
+                    FX[:,ic] = np.squeeze(f[K1])
                     
-                    CX[ic], FX[ic] = self.parallel(
-                        delayed(self._evolve)(
-                            CX[ic],FX[ic]
+                if self.n_jobs > 1:
+                    # with parallel_backend("loky"):
+
+                        # CX[ic], FX[ic] = self.parallel(
+                        #     delayed(self._evolve)(
+                        #         CX[ic],FX[ic]
+                        #     )
+                        #     for ic in range(self.n_complex)
+                        # )
+                        # Results = Parallel(n_jobs = self.n_jobs)(
+                        #     delayed(self._evolve)(
+                        #         CX[ic],FX[ic]
+                        #     )
+                        #     for ic in range(self.n_complex)
+                        # )
+
+                        # for ic in range(self.n_complex):
+                        #     CX[ic] = Results[ic][0]
+                        #     FX[ic] = Results[ic][1]
+                    with parallel_backend("threading"):
+                        Results = Parallel(n_jobs = self.n_jobs)(
+                            delayed(self._evolve)(
+                                CX[ic],FX[ic]
+                            )
+                            for ic in range(self.n_complex)
                         )
-                        for ic in range(self.n_complex)
-                    )
+
+                        for ic in range(self.n_complex):
+                            CX[ic] = Results[ic][0]
+                            FX[ic] = Results[ic][1]
+                        
                 else:
                
                     for ic in range(self.n_complex):
@@ -553,7 +601,7 @@ class Optimizer(object):
                     
                 X = CX.reshape(n_pop,d)
                 f = FX.reshape(n_pop,)
-            
+                # print('Xafter:',X.shape)
             
             best_pos = np.argmin(f)
             bestf = f[best_pos]

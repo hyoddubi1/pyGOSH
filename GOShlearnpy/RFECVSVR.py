@@ -23,7 +23,7 @@ from sklearn.base import clone
 
 from tqdm import tqdm
 
-
+from . import GlobalOptimization as go
 #%%
 
 def _fit_and_score(
@@ -482,3 +482,223 @@ class GRIDRFE(object):
                 y_pred = self.rfe.PostProcessor.fit_transform(y_pred)
         
         return y_pred
+
+
+class GORFE(object):
+    def __init__(self,estimator=None,rfe=None,optimizer=None,opt_flag = [1,1,1],verbose = True):
+        if estimator is None:
+            from sklearn.preprocessing import StandardScaler
+            from sklearn.svm import SVR
+            from sklearn.pipeline import Pipeline
+            svr = SVR(kernel='rbf')
+            scaler = StandardScaler()
+            estimator = Pipeline([('scaler',scaler),
+                             ('regressor',svr)]) 
+        
+        self.rfe = rfe
+        if self.rfe is None:
+   
+            k_fold =  KFold(n_splits=3, random_state=42,  shuffle=True)
+            self.rfe = RFE(estimator,cv = k_fold, n_jobs = 1)
+            
+        self.optimizer = optimizer # optimizer's parameter space dimension has to be equalt to opt_flag
+        if self.optimizer is None:
+            optimizer = go.Optimizer(
+                    lb = [10**-5,10**-5,10**-5],
+                    ub = [10000,10,10],
+                    algorithm = 'MCCE',
+                    stop_step = 50,
+                    stop_span = 10**-7,
+                    stop_obj_percent = 0.1,
+                    stop_fcal = 10000,
+                    dimension_restore = True,
+                    n_complex = 4,
+                    n_complex_size = 8,
+                    iseed = None,
+                    iniflg = None,
+                    pop_init_method = 'LHS',
+                    init_pop = None,
+                    verbose = verbose,
+                    algorithm_params = 'default',
+                    n_jobs = 1,
+                    pre_dispatch = '2*n_jobs',
+                    obj_eval = 'serial',
+                    ) 
+        
+        # self.opt_flag = opt_flag
+        
+    def obj_func_rfe_pipeline(self,x):
+        # print(x)
+        rfe = self.rfe
+        rfe.estimator['regressor'].C = x[0]
+        rfe.estimator['regressor'].epsilon = x[1]
+        rfe.estimator['regressor'].gamma = x[2]
+        
+        rfe.fit(self.X,self.y)
+        
+        maxscore = np.max(self.rfe.cv_results['mean_test_scores'])
+        # print(self.rfe.cv_results['mean_test_scores'])
+        
+        f = 1 - maxscore
+        
+        return f
+    
+    def obj_func_rfe_single_estimator(self,x):
+        
+        rfe = self.rfe
+        rfe.estimator.C = x[0]
+        rfe.estimator.epsilon = x[1]
+        rfe.estimator.gamma = x[2]
+        
+        rfe.fit(self.X,self.y)
+        
+        maxscore = np.max(self.rfe.cv_results['mean_test_scores'])
+        
+        f = 1 - maxscore
+        
+        return f
+   
+    def fit(self,X,y):
+        self.X = X
+        self.y = y
+        if str(type(self.rfe.estimator))[-5:-2] == 'SVR':
+            # self.fit_single_estimator(X,y)
+            self.optimizer.obj_func = self.obj_func_rfe_single_estimator
+            self.bestX, self.bestf = self.optimizer.evolve()
+            self.rfe.estimator.C = self.bestX[0]
+            self.rfe.estimator.epsilon = self.bestX[1]
+            self.rfe.estimator.gamma = self.bestX[2]
+            
+        elif str(type(self.rfe.estimator))[-10:-2] == 'Pipeline':
+            # self.fit_pipeline(X,y)              
+            self.optimizer.obj_func = self.obj_func_rfe_pipeline
+            self.bestX, self.bestf = self.optimizer.evolve()
+            self.rfe.estimator['regressor'].C = self.bestX[0]
+            self.rfe.estimator['regressor'].epsilon = self.bestX[1]
+            self.rfe.estimator['regressor'].gamma = self.bestX[2]
+        
+                    
+        print('\r\n Fitting the rfe module with the best parameter combination...')
+        
+        self.rfe.fit(self.X,self.y)
+        
+        n_features = np.argmax(self.rfe.cv_results['mean_test_scores']) + 1
+        Support = self.rfe.rfe_results['survived_vars'][n_features-1]
+        bestRanking = self.rfe.rfe_results['feature importance ranking']
+        bestScore = np.max(self.rfe.cv_results['mean_test_scores'])
+        self.best_gorfe_result = {'hyperparameters': self.bestX,
+                                  'n_features':n_features,
+                                  'ranking':bestRanking,
+                                  'support':Support,
+                                  'score':bestScore}
+        
+        print('\n cv results: \n',self.rfe.cv_results)
+        print('\n rfe results: \n',self.rfe.rfe_results)
+        
+        Xtrain = X[:,Support]
+        
+        if self.rfe.yScale:
+            if self.rfe.PreProcessor:
+                y = self.rfe.PreProcessor.fit_transform(y)
+            
+        if str(type(self.rfe.estimator))[-5:-2] == 'SVR':
+            self.rfe.estimator.C = self.best_gorfe_result['hyperparameters'][0]
+            self.rfe.estimator.epsilon = self.best_gorfe_result['hyperparameters'][1]
+            self.rfe.estimator.gamma = self.best_gorfe_result['hyperparameters'][2]
+            self.rfe.estimator.fit(Xtrain,y)
+        elif str(type(self.rfe.estimator))[-10:-2] == 'Pipeline':
+            self.rfe.estimator['regressor'].C = self.best_gorfe_result['hyperparameters'][0]
+            self.rfe.estimator['regressor'].epsilon = self.best_gorfe_result['hyperparameters'][1]
+            self.rfe.estimator['regressor'].gamma = self.best_gorfe_result['hyperparameters'][2]
+            self.rfe.estimator.fit(Xtrain,y)
+        
+        return self.best_gorfe_result
+        
+    def fit_best(self,X,y):    
+        Xtrain = X[:,self.best_gorfe_result['support']]
+        
+        if self.rfe.yScale:
+            if self.rfe.PreProcessor:
+                y = self.rfe.PreProcessor.fit_transform(y)
+            
+        if str(type(self.rfe.estimator))[-5:-2] == 'SVR':
+            self.rfe.estimator.C = self.best_gorfe_result['hyperparameters'][0]
+            self.rfe.estimator.epsilon = self.best_gorfe_result['hyperparameters'][1]
+            self.rfe.estimator.gamma = self.best_gorfe_result['hyperparameters'][2]
+            self.rfe.estimator.fit(Xtrain,y)
+        elif str(type(self.rfe.estimator))[-10:-2] == 'Pipeline':
+            self.rfe.estimator['regressor'].C = self.best_gorfe_result['hyperparameters'][0]
+            self.rfe.estimator['regressor'].epsilon = self.best_gorfe_result['hyperparameters'][1]
+            self.rfe.estimator['regressor'].gamma = self.best_gorfe_result['hyperparameters'][2]
+            self.rfe.estimator.fit(Xtrain,y)
+        
+    def predict(self,X):
+        
+        if X.shape[1] != self.best_gorfe_result['n_features']:
+            print('Since the shape of the input matrix is not equal to the best result,',
+                  ' it regards the input as the best X and converts the size corresponding to the "support"')
+            X = X[:,self.best_gorfe_result['support']]
+        
+        y_pred = self.rfe.estimator.predict(X)
+        if self.rfe.yScale:
+            if self.rfe.PostProcessor:
+                y_pred = self.rfe.PostProcessor.fit_transform(y_pred)
+        
+        return y_pred
+#     def find_best(self,n_features=None):
+        
+#         test_score_mat = self.gridrfe_results['mean_test_scores']
+         
+        
+#         if n_features == None:
+#             best_score_loc = np.unravel_index(test_score_mat.argmax(), test_score_mat.shape)#(Parameter grid, n_features)
+#             n_features = best_score_loc[1]+1
+#         else:
+#             best_score_loc = test_score_mat[:,n_features-1].argmax() 
+#             best_score_loc = [best_score_loc,n_features-1]
+        
+#         bestParameters = self.gridrfe_results['hyperparameters'][best_score_loc[0]]
+#         bestRanking = self.gridrfe_results['grid_rankings'][best_score_loc[0]]
+#         Support = self.gridrfe_results['grid_rankings'][best_score_loc[0]] <= n_features
+#         bestScore = self.gridrfe_results['mean_test_scores'][best_score_loc[0],best_score_loc[1]]
+        
+#         self.best_gridrfe_result = {'best_score_location':best_score_loc,
+#                                     'hyperparameters':bestParameters,
+#                                     'n_features':n_features,
+#                                     'ranking':bestRanking,
+#                                     'support':Support,
+#                                     'score':bestScore}
+#         return self.best_gridrfe_result
+    
+#     def find_best_fit(self,X,y,n_features=None):
+        
+#         self.find_best(n_features = n_features)
+        
+#         Xtrain = X[:,self.best_gridrfe_result['support']]
+        
+#         if self.rfe.yScale:
+#             if self.rfe.PreProcessor:
+#                 y = self.rfe.PreProcessor.fit_transform(y)
+            
+#         if str(type(self.rfe.estimator))[-5:-2] == 'SVR':
+#             self.rfe.estimator.C = self.best_gridrfe_result['hyperparameters'][0]
+#             self.rfe.estimator.epsilon = self.best_gridrfe_result['hyperparameters'][1]
+#             self.rfe.estimator.gamma = self.best_gridrfe_result['hyperparameters'][2]
+#             self.rfe.estimator.fit(Xtrain,y)
+#         elif str(type(self.rfe.estimator))[-10:-2] == 'Pipeline':
+#             self.rfe.estimator['regressor'].C = self.best_gridrfe_result['hyperparameters'][0]
+#             self.rfe.estimator['regressor'].epsilon = self.best_gridrfe_result['hyperparameters'][1]
+#             self.rfe.estimator['regressor'].gamma = self.best_gridrfe_result['hyperparameters'][2]
+#             self.rfe.estimator.fit(Xtrain,y)
+        
+        
+#         return self.best_gridrfe_result
+    
+#     def predict(self,X):
+# #        y = self.rfe.estimator.predict(X)
+#         y_pred = self.rfe.estimator.predict(X)
+#         if self.rfe.yScale:
+#             if self.rfe.PostProcessor:
+#                 y_pred = self.rfe.PostProcessor.fit_transform(y_pred)
+        
+#         return y_pred

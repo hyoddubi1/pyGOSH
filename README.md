@@ -1,4 +1,4 @@
-# GOShLearnpy: Python library for Global Optmization and Shallow machine learning
+# pyGOSH: Python library for Global Optmization and SHallow machine learning
 
 This library has functions as belows
 
@@ -7,14 +7,27 @@ This library has functions as belows
     - SOM: Self-Organizing Map
     - GMM: Gaussian mixture model
     
-- GlobalOptimization
-    - Optimizer: global optimization algorithm optimizer; it is based on the Shuffled Complex Evolution (SCE) algorithm structure
-        - DE: Differential evolution
-        - CCE: Competitive complex evolution
-        - MCCE: Modified CCE
+- Global Optimization (GO)
+    - Optimizer: global optimization algorithm optimizers; it is based on the Shuffled Complex Evolution (SCE) algorithm structure
+        - DE: Differential evolution 
+        - CCE: Competitive complex evolution (in SCE-UA)
+        - MCCE: Modified CCE (in SP-UCI)
         
 - RFECVSVR
     - RFE: Recursive Feature elimination (with Cross-Validation)
-    - GRIDRFE: RFE with Grid searching
+    - GRIDRFE: RFE with parameter tuning of SVR by Grid searching
+	- GORFE: RFE with paramter tuning of SVR by GO
     
+## How to Use?
+
 Execution example will be added soon
+
+## Citation
+
+This library has been firstly reffered to:
+
+```
+Will be updated
+```
+
+Related articles (doi)s:
