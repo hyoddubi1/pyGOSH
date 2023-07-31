@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8198535.svg)](https://doi.org/10.5281/zenodo.8198535)
+
 # pyGOSH: Python library for Global Optmization and SHallow machine learning
 
 This library has functions as belows
