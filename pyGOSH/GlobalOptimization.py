@@ -27,12 +27,14 @@ def testprint():
     
     return print(MAE(y,y_pred))
 
-def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
+def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial',int_program = False):
     
     # alpha and beta are the 
     n, d = X.shape
     
     fcal = 0
+    
+    int_exist = np.sum(int_program)>0
     
     q = np.max([d, 2])
     q = np.min([n, q])
@@ -70,6 +72,9 @@ def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
         # print('Xnew before: \r\n',Xnew)
         Xnew = BoundaryHandling(Xnew,ub,lb)
         # print('\r\nXnew',Xnew)
+        if int_exist :
+            Xnew[int_program] = np.round(Xnew[int_program])
+            
         if obj_eval=='serial':
             fnew = obj_func(Xnew)
         elif obj_eval=='vector':
@@ -82,6 +87,8 @@ def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
             if fnew < fb:
                 Xnew1 = Xnew + alpha * (Xnew- ce)
                 Xnew1 = BoundaryHandling(Xnew1,ub,lb)
+                if int_exist :
+                    Xnew1[int_program] = np.round(Xnew1[int_program])
                 if obj_eval=='serial':
                     fnew1 = obj_func(Xnew1)
                 elif obj_eval=='vector':
@@ -96,6 +103,8 @@ def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
             if fnew > vq:
                 Xnew = uq + beta * (ce - uq)
                 Xnew = BoundaryHandling(Xnew,ub,lb)
+                if int_exist :
+                    Xnew[int_program] = np.round(Xnew[int_program])
                 if obj_eval=='serial':
                     fnew = obj_func(Xnew)
                 elif obj_eval=='vector':
@@ -121,6 +130,8 @@ def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
                     
                         Xnew = np.random.multivariate_normal(ce,sig,1)[0]
                     Xnew = BoundaryHandling(Xnew,ub,lb)
+                    if int_exist :
+                        Xnew[int_program] = np.round(Xnew[int_program])
                     if obj_eval=='serial':
                         fnew = obj_func(Xnew)
                     elif obj_eval=='vector':
@@ -131,6 +142,8 @@ def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
             else:
                 Xnew1 = ce + beta * (Xnew- ce)
                 Xnew1 = BoundaryHandling(Xnew1,ub,lb)
+                if int_exist :
+                    Xnew1[int_program] = np.round(Xnew1[int_program])
                 if obj_eval=='serial':
                     fnew1 = obj_func(Xnew1)
                 elif obj_eval=='vector':
@@ -138,7 +151,7 @@ def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
 #                fnew1 = obj_func(Xnew1.reshape(1,-1))
                 fcal = fcal + 1
                 if fnew1 < fnew:
-                    fnew = fnew1.copy()
+                    fnew = fnew1
                     Xnew = Xnew1.copy()
     
         
@@ -147,13 +160,15 @@ def MCCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
 #        print('fnew',fnew)
     return X, f, fcal
 
-def CCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
+def CCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial',int_program = False):
     
     # alpha: reflection coefficient
     # beta: contraction coefficient
     n, d = X.shape
     
     fcal = 0
+    
+    int_exist = np.sum(int_program)>0
     
     q = np.max([d, 2])
     q = np.min([n, q])
@@ -184,7 +199,8 @@ def CCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
         Xnew = ce + alpha * (ce - uq)
 
         Xnew = BoundaryHandling(Xnew,ub,lb)
-
+        if int_exist :
+            Xnew[int_program] = np.round(Xnew[int_program])
         if obj_eval=='serial':
             fnew = obj_func(Xnew)
         elif obj_eval=='vector':
@@ -196,6 +212,8 @@ def CCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
         if fnew > vq:
             Xnew = uq + beta * (ce - uq)
             Xnew = BoundaryHandling(Xnew,ub,lb)
+            if int_exist :
+                Xnew[int_program] = np.round(Xnew[int_program])
             if obj_eval=='serial':
                 fnew = obj_func(Xnew)
             elif obj_eval=='vector':
@@ -207,6 +225,8 @@ def CCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
                 
                 Xnew = lb + np.random.rand(d) *(ub-lb)
                 Xnew = BoundaryHandling(Xnew,ub,lb)
+                if int_exist :
+                    Xnew[int_program] = np.round(Xnew[int_program])
                 if obj_eval=='serial':
                     fnew = obj_func(Xnew)
                 elif obj_eval=='vector':
@@ -219,7 +239,8 @@ def CCE(X,f,ub,lb,obj_func,alpha = 1.0, beta = 0.5,obj_eval='serial'):
     
     return X, f, fcal
 
-def DE(X,f,ub,lb,obj_func,F = 1, CR = 0.75,mutation_scheme = 'best1',obj_eval='serial'):
+def DE(X,f,ub,lb,obj_func,F = 1, CR = 0.75,mutation_scheme = 'best1',obj_eval='serial',
+       int_program = False):
     # Differential evolution
     # F: mutation rate
     # CR: crossover rate
@@ -229,6 +250,8 @@ def DE(X,f,ub,lb,obj_func,F = 1, CR = 0.75,mutation_scheme = 'best1',obj_eval='s
     newf = f.copy()
 #    newf2 = f.copy()
     fcal = 0
+    
+    int_exist = np.sum(int_program)>0
     
     if mutation_scheme[:4] == 'best' or mutation_scheme == 'current_to_best':
         Xbest = X[np.argmin(f)]
@@ -253,15 +276,18 @@ def DE(X,f,ub,lb,obj_func,F = 1, CR = 0.75,mutation_scheme = 'best1',obj_eval='s
 #        for i in range(D):
         uis[i][rij<CR] = vi[rij<CR]
         uis[i] = BoundaryHandling(uis[i],ub,lb)
+
 #        print(uis[i])
         
         if obj_eval=='serial':
+            if int_exist :
+                uis[i][int_program] = np.round(uis[i][int_program])
             newf[i] = obj_func(uis[i])
         elif obj_eval=='vector':
             uii2d = uis[i].reshape(1,D)
+            if int_exist :
+                uii2d[:,int_program] = np.round(uii2d[:,int_program])
             newf[i] = obj_func(uii2d)
-        
-        
         
         fcal = fcal + 1
             
@@ -273,7 +299,7 @@ def DE(X,f,ub,lb,obj_func,F = 1, CR = 0.75,mutation_scheme = 'best1',obj_eval='s
     
     return X, f, fcal
 
-def DimensionRestore(obj_func,S,Sf,ub,lb,fcal,obj_eval='serial'):
+def DimensionRestore(obj_func,S,Sf,ub,lb,fcal,obj_eval='serial',int_program = None):
     
     N, Dim = S.shape
     Snew = S.copy()
@@ -281,7 +307,7 @@ def DimensionRestore(obj_func,S,Sf,ub,lb,fcal,obj_eval='serial'):
     Nmean = np.mean(S, axis = 0)
     Nstd = np.std(S, axis = 0)
     a = S.transpose()
-
+    int_exist = np.sum(int_program)>0
     for i in range(Dim):
         a[i,:] = (a[i,:] - Nmean[i])/(Nstd[i]+0.0001)
     
@@ -289,7 +315,7 @@ def DimensionRestore(obj_func,S,Sf,ub,lb,fcal,obj_eval='serial'):
     c = np.matmul(a,a.transpose()) / N
     
     d, v=np.linalg.eig(c)
-
+    v = np.real(v)
     d = d / np.sum(d)
     lastdim = np.sum(d > (0.01/Dim))
     nlost = Dim - lastdim
@@ -298,12 +324,18 @@ def DimensionRestore(obj_func,S,Sf,ub,lb,fcal,obj_eval='serial'):
         for i in range(lastdim,Dim):
             happen = 0
             stemp = ((np.random.randn(1)+2)*r*v[:,i]).transpose()
+            
             for j in range(Dim):
                 stemp[j] = stemp[j]*Nstd[j] + Nmean[j]
             stemp = BoundaryHandling(stemp,ub,lb)
+
             if obj_eval=='serial':
+                if int_exist :
+                    stemp[int_program] = np.round(stemp[int_program])
                 ftemp = obj_func(stemp)
             elif obj_eval=='vector':
+                if int_exist :
+                    stemp[:,int_program] = np.round(stemp[:,int_program])
                 ftemp = obj_func(stemp.reshape(1,-1))
 #            ftemp = obj_func(stemp.reshape(1,-1))
             fcal = fcal +1
@@ -317,8 +349,12 @@ def DimensionRestore(obj_func,S,Sf,ub,lb,fcal,obj_eval='serial'):
                     
                 stemp = BoundaryHandling(stemp,ub,lb)
                 if obj_eval=='serial':
+                    if int_exist :
+                        stemp[int_program] = np.round(stemp[int_program])
                     ftemp = obj_func(stemp)
                 elif obj_eval=='vector':
+                    if int_exist :
+                        stemp[:,int_program] = np.round(stemp[:,int_program])
                     ftemp = obj_func(stemp.reshape(1,-1))
 #                ftemp = obj_func(stemp.reshape(1,-1))
                 fcal = fcal +1
@@ -338,15 +374,22 @@ def DimensionRestore(obj_func,S,Sf,ub,lb,fcal,obj_eval='serial'):
 def BoundaryHandling(X,ub,lb):
     
     bound = ub - lb
-    
+    # X = np.real(X)
     # upper bound reflection
-    idx = X > ub
-    rm = np.mod(X[idx]-ub[idx],bound[idx])
-    X[idx] = ub[idx] - np.abs(rm)
+    idx = np.where(X > ub)[0]
+    # idx = X>ub
+    # print(X[idx]-ub[idx],bound[idx])
+    if len(idx)>0:
+        # print(X[idx]-ub[idx],bound[idx])
+            
+        rm = np.mod(X[idx]-ub[idx],bound[idx])
+        X[idx] = ub[idx] - np.abs(rm)
     #lower bound reflection
-    idx =  X < lb
-    rm = np.mod(X[idx]-lb[idx],bound[idx])
-    X[idx] = ub[idx] - np.abs(rm)
+    idx = np.where(X < lb)[0]
+    # idx =  X < lb
+    if len(idx)>0:
+        rm = np.mod(X[idx]-lb[idx],bound[idx])
+        X[idx] = ub[idx] - np.abs(rm)
     
     return X
     
@@ -407,32 +450,37 @@ class Optimizer(object):
             n_jobs = 1,
             pre_dispatch = '2*n_jobs',
             obj_eval = 'serial',
+            int_program = False
             ):
         
         # If n_complex is larger than 1, this optimizer performs the 
         # SCE procedure automatically 
         
-        self.lb = np.array(lb)
-        self.ub = np.array(ub)
+        self.lb = np.array(lb,dtype=np.float64)
+        self.ub = np.array(ub,dtype=np.float64)
+        # print(self.lb,self.ub)
         self.bound = np.array(ub)-np.array(lb)
-        self.n_dim = len(self.lb)
-        
+        self.n_complex_size = n_complex_size
         self.n_complex = n_complex
-        if n_complex_size != None:
-            self.n_complex_size = n_complex_size
-        else:
-            self.n_complex_size = 2 * self.n_dim + 1
+        
+
         
         self.n_pop = self.n_complex * self.n_complex_size
         self.algorithm = algorithm
 
         self.pop_init_method = pop_init_method
-        
-        if type(init_pop) != np.ndarray :
-            self.X = Pop_init(self.n_pop,self.n_dim,lb=self.lb,ub=self.ub,method = self.pop_init_method,seed = iseed)
-        else:
-            self.X = init_pop
+        # print(self.lb,self.ub)
+        self.init_pop = init_pop
+        self.iseed = iseed
+        # if type(self.init_pop) != np.ndarray :
+        #     self.X = Pop_init(self.n_pop,self.n_dim,lb=self.lb,ub=self.ub,method = self.pop_init_method,seed = iseed)
+        # else:
+        #     self.X = init_pop
             
+        if type(self.init_pop) == np.ndarray :
+
+            self.X = init_pop
+        # print(self.X)    
         self.obj_func = obj_func
         self.verbose = verbose
         
@@ -462,9 +510,8 @@ class Optimizer(object):
             else:
                 self.algorithm_params = algorithm_params
         
-        
-        
-        
+        self.int_program = np.array(int_program)
+            
         self.obj_eval = obj_eval # Objective function evaluation procedure = 'serial' or 'vector'
         
         self.n_jobs = n_jobs
@@ -479,23 +526,26 @@ class Optimizer(object):
             
             
     def _evolve(self,X,f):
-        
+        # print(self.lb,self.ub)
         if self.dimension_restore:
-            X,f,self.fcal = DimensionRestore(self.obj_func,X,f,self.ub,self.lb,self.fcal)
+            X,f,self.fcal = DimensionRestore(self.obj_func,X,f,self.ub,self.lb,self.fcal,
+                                             int_program=self.int_program)
         
         if self.algorithm == 'CCE':
             newX, newf, fcal = CCE(X,f,self.ub,self.lb,
                              self.obj_func,
                              alpha = self.algorithm_params['alpha'],
                              beta = self.algorithm_params['beta'],
-                             obj_eval=self.obj_eval)
+                             obj_eval=self.obj_eval,
+                             int_program = self.int_program)
             
         elif self.algorithm == 'MCCE':
             newX, newf, fcal = MCCE(X,f,self.ub,self.lb,
                              self.obj_func,
                              alpha = self.algorithm_params['alpha'],
                              beta = self.algorithm_params['beta'],
-                             obj_eval=self.obj_eval)
+                             obj_eval=self.obj_eval,
+                             int_program = self.int_program)
             
         elif self.algorithm == 'DE':
             newX, newf, fcal = DE(X,f,self.ub,self.lb,
@@ -503,18 +553,42 @@ class Optimizer(object):
                             F = self.algorithm_params['F'],
                             CR = self.algorithm_params['CR'],
                             mutation_scheme = self.algorithm_params['mutation_scheme'],
-                            obj_eval=self.obj_eval)
+                            obj_eval=self.obj_eval,
+                            int_program = self.int_program)
         
         self.fcal = self.fcal + fcal
+        
         return newX, newf
 
 
     def evolve(self):
+        self.n_dim = len(self.lb)
+        if self.n_complex_size is None:
+            self.n_complex_size = 2 * self.n_dim + 1
+            
+        if self.int_program is False:
+            self.int_program = np.zeros(self.n_dim,dtype=bool)  
+        elif self.int_program is True:
+            self.int_program = np.ones(self.n_dim,dtype=bool)  
         
+        self.int_exist = np.sum(self.int_program)>0
+            
+            
+        if type(self.init_pop) != np.ndarray :
+            self.X = Pop_init(self.n_pop,self.n_dim,lb=self.lb,ub=self.ub,method = self.pop_init_method,seed = self.iseed)
         if self.verbose:
             print('Evolve the population \n')
+        # print(self.lb,self.ub)
+        if self.int_exist:
+            self.X[:,self.int_program] = np.round(self.X[:,self.int_program])
         
         X = self.X.copy()
+        
+
+        
+        # self.int_program = np.array(int_program)
+        # self.int_exist = np.sum(int_program)>0
+        
         # print('X:\n',X)
         if self.obj_eval == 'serial':
             
@@ -526,7 +600,7 @@ class Optimizer(object):
             f = self.obj_func(X)
         self.Xs.append(X)
         self.fs.append(f)
-        
+        # print('X2:\n',X)
         best_pos = np.argmin(f)
         bestf = f[best_pos]
         bestX = X[best_pos]
@@ -541,20 +615,23 @@ class Optimizer(object):
         
         count = 0
         while True:
+
             if self.verbose:
                 print(str(count+1),'times evolution.\n')
-
+                
             # Evaluate the objective function and Update the population
             if self.n_complex == 1:
                 X, f = self._evolve(X,f) # dimension storing process is in this _evolve function
+                
             else:
                 #SCE procedure
+                
 
                 sortidx = np.squeeze(np.argsort(f,axis = 0))
 
                 f = f[sortidx]
                 X = X[sortidx]
-
+                
                 for ic in range(self.n_complex_size):
                     K1 = np.array(random.sample(range(self.n_complex), self.n_complex)) + ic * self.n_complex
                     K1 = np.squeeze(K1)
@@ -562,7 +639,7 @@ class Optimizer(object):
                     CX[:,ic,:] = X[K1,:]
 
                     FX[:,ic] = np.squeeze(f[K1])
-                    
+                
                 if self.n_jobs > 1:
                     # with parallel_backend("loky"):
 
@@ -601,8 +678,10 @@ class Optimizer(object):
                     
                 X = CX.reshape(n_pop,d)
                 f = FX.reshape(n_pop,)
+                # print(X)
                 # print('Xafter:',X.shape)
-            
+            # print('afterevolve:', X)
+
             best_pos = np.argmin(f)
             bestf = f[best_pos]
             bestX = X[best_pos]
@@ -615,7 +694,7 @@ class Optimizer(object):
             
             if self.fcal > self.stop_fcal:
                 if self.verbose:
-                    print('Evolution stopped since the X span is less than the stop criterion.\n')
+                    print('Evolution stopped since the fcal is more than the stop criterion.\n')
                 break
 
             span = np.exp(np.mean(np.log1p((np.max(X,axis = 0)-np.min(X,axis = 0))/np.mean(self.ub-self.lb)))) -1
