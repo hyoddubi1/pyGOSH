@@ -50,5 +50,7 @@ author = {Hyoseob Noh and Geunsoo Son and Dongsu Kim and Yong Sung Park}
 - v2.0.0: 
 	- MOSGO-SVR update: Multiple runs (epochs), Pareto front, change module name, variable combination panelty.
 
-- v1.0.1: Initial version.
+- v1.0.1: GORFE add.
+
+- v1.0.0: Initial version.
 
