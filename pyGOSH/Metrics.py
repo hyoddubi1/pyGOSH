@@ -9,7 +9,7 @@ Created on Wed Jun 22 09:49:04 2022
 # Hyoseb Noh
 # Update date : 2022 06 22
 #%%
-from statsmodels.stats.outliers_influence import variance_inflation_factor
+#from statsmodels.stats.outliers_influence import variance_inflation_factor
 import numpy as np
 #%%
 def R2(y_obs,y_pred):
@@ -41,6 +41,55 @@ def neg_adjusted_R2(y_obs,y_pred):
 def MAE(y_obs,y_pred):
     n = len(y_obs)
     return np.sum(np.abs(y_pred - y_obs))/n
+
+def variance_inflation_factor(exog, exog_idx):
+    """
+    It has been copied from 'statsmodel' library
+    Variance inflation factor, VIF, for one exogenous variable
+
+    The variance inflation factor is a measure for the increase of the
+    variance of the parameter estimates if an additional variable, given by
+    exog_idx is added to the linear regression. It is a measure for
+    multicollinearity of the design matrix, exog.
+
+    One recommendation is that if VIF is greater than 5, then the explanatory
+    variable given by exog_idx is highly collinear with the other explanatory
+    variables, and the parameter estimates will have large standard errors
+    because of this.
+
+    Parameters
+    ----------
+    exog : {ndarray, DataFrame}
+        design matrix with all explanatory variables, as for example used in
+        regression
+    exog_idx : int
+        index of the exogenous variable in the columns of exog
+
+    Returns
+    -------
+    float
+        variance inflation factor
+
+    Notes
+    -----
+    This function does not save the auxiliary regression.
+
+    See Also
+    --------
+    xxx : class for regression diagnostics  TODO: does not exist yet
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Variance_inflation_factor
+    """
+    k_vars = exog.shape[1]
+    exog = np.asarray(exog)
+    x_i = exog[:, exog_idx]
+    mask = np.arange(k_vars) != exog_idx
+    x_noti = exog[:, mask]
+    r_squared_i = OLS(x_i, x_noti).fit().rsquared
+    vif = 1. / (1. - r_squared_i)
+    return vif
 
 
 def VIF(X):

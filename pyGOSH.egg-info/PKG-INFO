@@ -1,0 +1,69 @@
+Metadata-Version: 2.1
+Name: pyGOSH
+Version: 2.0.0
+Summary: pyGOSH: Python library for Global Optmization and SHallow machine learning
+Home-page: https://github.com/hyoddubi1/pyGOSH
+Author: Hyoseob Noh
+Author-email: hyoddubi@naver.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8198535.svg)](https://doi.org/10.5281/zenodo.8198535)
+
+# pyGOSH: Python library for Global Optmization and SHallow machine learning
+
+This library has functions as belows
+
+- Clustering
+    - Kmeans: K-means clustering
+    - SOM: Self-Organizing Map
+    - GMM: Gaussian mixture model
+    
+- Global Optimization (GO)
+    - Optimizer: global optimization algorithms that allows any costom objective function; it is based on the Shuffled Complex Evolution (SCE) algorithm structure
+        - DE: Differential evolution 
+        - CCE: Competitive complex evolution (in SCE-UA)
+        - MCCE: Modified CCE (in SP-UCI)
+        
+- RFECVSVR
+    - RFE: Recursive Feature elimination (with Cross-Validation)
+    - GRIDRFE: RFE with parameter tuning of SVR by Grid searching
+	- GORFE: RFE with paramter tuning of SVR by GO
+	- MOSGOSVR: MOdel Selection with Global Optimization for SVR
+    
+## How to Use?
+
+Execution example will be added soon
+
+## Citation
+
+This library (version 1) has been firstly reffered to:
+
+Related articles Bibtex: 
+
+```
+@article{NOH2024104636,
+title = {H-ADCP-based real-time sediment load monitoring system using support vector regression calibrated by global optimization technique and its applications},
+journal = {Advances in Water Resources},
+volume = {185},
+pages = {104636},
+year = {2024},
+issn = {0309-1708},
+doi = {https://doi.org/10.1016/j.advwatres.2024.104636},
+url = {https://www.sciencedirect.com/science/article/pii/S030917082400023X},
+author = {Hyoseob Noh and Geunsoo Son and Dongsu Kim and Yong Sung Park}
+}
+```
+
+## Update history
+
+- v2.0.0: 
+	- MOSGO-SVR update: Multiple runs (epochs), Pareto front, change module name, variable combination panelty.
+
+- v1.0.1: GORFE add.
+
+- v1.0.0: Initial version.
+
