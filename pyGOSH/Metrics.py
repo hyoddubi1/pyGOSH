@@ -9,6 +9,7 @@ Created on Wed Jun 22 09:49:04 2022
 # Hyoseb Noh
 # Update date : 2022 06 22
 #%%
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 import numpy as np
 #%%
 def R2(y_obs,y_pred):
@@ -41,3 +42,44 @@ def MAE(y_obs,y_pred):
     n = len(y_obs)
     return np.sum(np.abs(y_pred - y_obs))/n
 
+
+def VIF(X):
+    return np.array([variance_inflation_factor(X,i) for i in range(X.shape[1])])
+
+
+def LinearRankCriterion(estimator):
+    svs = estimator.support_vectors_
+    duals = estimator.dual_coef_
+    duals = duals.transpose()
+    c = np.sum(svs*duals,axis = 0)
+    return c**2
+    
+
+def rbfRankCriterion(estimator):
+    c = []
+    svs = estimator.support_vectors_
+    duals = estimator.dual_coef_
+    duals = duals.transpose()
+    dualmatmul = np.matmul(duals,duals.transpose())
+    N,Nvar = svs.shape
+    Kmat = np.zeros([N,N])
+    Kmat_p = np.zeros([N,N])
+    xi3d = svs.reshape([N,1,Nvar]).repeat(N,axis = 1)
+    xj3d = svs.reshape([1,N,Nvar]).repeat(N,axis = 0)
+    Kmat = np.sum((xi3d - xj3d)**2,axis = 2)
+    for p in range(Nvar):
+
+        X_p = np.delete(svs,p,axis = 1)
+
+        xi3d_p = X_p.reshape([N,1,Nvar-1]).repeat(N,axis = 1)
+        xj3d_p = X_p.reshape([1,N,Nvar-1]).repeat(N,axis = 0)
+        Kmat_p = np.sum((xi3d_p - xj3d_p)**2,axis = 2)
+    
+        T1 = dualmatmul*Kmat
+        T2 = dualmatmul*Kmat_p
+        
+        D = np.sum(T1) - np.sum(T2)
+        c.append(D)
+        
+    c = np.array(c)
+    return c**2

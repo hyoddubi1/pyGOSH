@@ -9,13 +9,13 @@ with open("README.md", "r") as fh:
     
 setuptools.setup(
     name="pyGOSH",
-    version="0.0.1",
+    version="2.0.0",
     author="Hyoseob Noh",
     author_email="hyoddubi@naver.com",
     description="pyGOSH: Python library for Global Optmization and SHallow machine learning",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/hyoddubi1/GOShpy",
+    url="https://github.com/hyoddubi1/pyGOSH",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

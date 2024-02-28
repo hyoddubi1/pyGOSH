@@ -8,7 +8,7 @@ Created on Tue Jun 21 16:38:58 2022
 from . import Metrics
 from . import Utils
 from . import Clustering
-from . import RFECVSVR
+from . import MOSGOSVR
 from . import GlobalOptimization
 
 # from . import Metrics

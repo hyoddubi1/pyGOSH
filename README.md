@@ -27,10 +27,28 @@ Execution example will be added soon
 
 ## Citation
 
-This library has been firstly reffered to:
+This library (version 1) has been firstly reffered to:
 
-Related articles (doi)s:
+Related articles Bibtex: 
 
 ```
-Will be updated
+@article{NOH2024104636,
+title = {H-ADCP-based real-time sediment load monitoring system using support vector regression calibrated by global optimization technique and its applications},
+journal = {Advances in Water Resources},
+volume = {185},
+pages = {104636},
+year = {2024},
+issn = {0309-1708},
+doi = {https://doi.org/10.1016/j.advwatres.2024.104636},
+url = {https://www.sciencedirect.com/science/article/pii/S030917082400023X},
+author = {Hyoseob Noh and Geunsoo Son and Dongsu Kim and Yong Sung Park}
+}
 ```
+
+## Update history
+
+- v2.0.0: 
+	- MOSGO-SVR update: Multiple runs (epochs), Pareto front, change module name, variable combination panelty.
+
+- v1.0.1: Initial version.
+
